@@ -7,30 +7,83 @@
 
 using namespace std;
 
-string dijkstra(string start, string end, string cities[], list<pair<string, int>> distances) {
-	string visited = {}; 
-	map<string, int> distance_from_start;
-	int city_index = 0;
-
-	//this searches through the paralell array and finds the index of the starting city
-	for (int i = 0; i < 7; ++i) {
-		if (start == cities[i]) {
-			city_index = i;
+bool is_visited(string city, vector<string> chosen) {
+	for (int i = 0; i < chosen.size(); ++i) {
+		if (chosen.at(i) == city) {
+			return true;
 		}
 	}
 
+	return false;
+}
+
+bool is_empty(string city) {
+	if (city == NULL) {
+		return true;
+	}
+
+	return false;
+}
+
+bool is_less(string current_city, string potential_city, map<string, pair<string, int>> distance_from_start) {
+	if (distance_from_start[potenial_city]->second < distance_from_start[current_city]->second) {
+		return true;
+	}
+
+	return false;
+}
+
+string dijkstra(string start, string end, string cities[], list<pair<string, int>> distances) {
+	vector<string> chosen = {};
+	map<string, pair<string, int>> distance_from_start;
+
 	//this iterates through the cities and sets their total distances from the starting point to infinity (represented by -1)
-	distance_from_start["STL"] = -1;
-	distance_from_start["NY"] = -1;
-	distance_from_start["MA"] = -1;
-	distance_from_start["CR"] = -1;
-	distance_from_start["KC"] = -1;
-	distance_from_start["LA"] = -1;
-	distance_from_start["MN"] = -1;
+	distance_from_start["STL"] = make_pair(NULL, INT_MAX);
+	distance_from_start["NY"] = make_pair(NULL, INT_MAX);
+	distance_from_start["MA"] = make_pair(NULL, INT_MAX);
+	distance_from_start["CR"] = make_pair(NULL, INT_MAX);
+	distance_from_start["KC"] = make_pair(NULL, INT_MAX);
+	distance_from_start["LA"] = make_pair(NULL, INT_MAX);
+	distance_from_start["MN"] = make_pair(NULL, INT_MAX);
+
+	//this sets the starting city to itself with a distance of 0
+	distance_from_start[start] = make_pair(start, 0);
+	chosen.push_back(start);
 
 	//this iterates through the city distances and selects the one closest to the starting point, adds it to the visited list, and updates the distance_from_start for each city
-	for (int i = 0; i < 7; ++i) {
-		
+
+	//while the vector size is less than 6
+	for (int i = 0; i < 6; ++i) {
+		//the end of chosen
+		string current_city = chosen[chosen.size() - 1];
+		int current_city_distance = distance_from_start[current_city]->second;
+
+		//the list related to the current city
+		list<pair<string, int>> current_list = distances[chosen];
+
+		//iterator for this list
+		list<pair<string, int>>::iterator it = current_list.begin();
+
+		//iterate through the potential destination cities and update/add distances
+		for (it; it != current_list.end(); ++it) {
+			string next_city = it->first;
+			string next_city_distance = it->second;
+
+			//if the spot for the city in distance_from_start is not yet populated
+			if (isempty(distance_from_start[next_city]->first)) {
+				distance_from_start[next_city]->first = current_city;
+				distance_from_start[next_city]->second = next_city_distance;
+			}
+
+			//if it is populated, determine if the new value could be better
+			else {
+				if (distance_from_start[next_city]->second > (current_city_distance + next_city_distance)) {
+					distance_from_start[next_city]->first = current_city;
+					distance_from_start[next_city]->second = (current_city_distance + next_city_distance);
+				}
+			}
+
+		}
 	}
 
 
@@ -52,13 +105,19 @@ int main() {
 	//add each city into the parallel array city distances for easy lookup
 	list<pair<string, int>> city_distances[7] = { STL, NY, MA, CR, KC, LA, MN };
 
+	//add each city into map 
+	map<string, pair<string, int>> city_distances_map;
+	for (int i = 0; i < 7; ++i) {
+		distance_from_start[cities[i]] = city_distances[i];
+	}
+
 	string starting_city, ending_city;
 	cout << "What is your starting city? (STL, NY, MA, CR, KC, LA, MN) ==> ";
 	cin >> starting_city;
 	cout << "What is your ending city? (STL, NY, MA, CR, KC, LA, MN) ==> ";
 	cin >> ending_city;
 
-	string shortest_path = dijkstra(starting_city, ending_city, cities, city_distances);
+	string shortest_path = dijkstra(starting_city, ending_city, city_distances_map);
 
 	
 	return 0;
