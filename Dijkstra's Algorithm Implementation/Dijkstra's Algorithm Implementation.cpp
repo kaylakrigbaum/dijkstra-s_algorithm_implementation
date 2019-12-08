@@ -4,6 +4,7 @@
 #include <cmath>
 #include <list>
 #include <map>
+#include <string>
 
 using namespace std;
 
@@ -17,8 +18,8 @@ bool is_visited(string city, vector<string> chosen) {
 	return false;
 }
 
-bool is_empty(string city) {
-	if (city == NULL) {
+bool empty(string city) {
+	if (city == "") {
 		return true;
 	}
 
@@ -26,67 +27,111 @@ bool is_empty(string city) {
 }
 
 bool is_less(string current_city, string potential_city, map<string, pair<string, int>> distance_from_start) {
-	if (distance_from_start[potenial_city]->second < distance_from_start[current_city]->second) {
+	if (distance_from_start[potential_city].second < distance_from_start[current_city].second) {
 		return true;
 	}
 
 	return false;
 }
 
-string dijkstra(string start, string end, string cities[], list<pair<string, int>> distances) {
+string pick_smallest(map<string, pair<string, int>> distance_from_start, vector<string> chosen, string end) {
+	map<string, pair<string, int>>::iterator it = distance_from_start.begin();
+	string current_smallest_city = "";
+	int current_smallest_distance = INT_MAX;
+
+	for (it; it != distance_from_start.end(); ++it) {
+		if ((is_visited(it->first, chosen) == false) && (it->first != end)) {
+			if (it->second.second < current_smallest_distance) {
+				current_smallest_city = it->first;
+				current_smallest_distance = it->second.second;
+			}
+		}
+	}
+
+	return current_smallest_city;
+}
+
+string backtrack(map<string, pair<string, int>> distance_from_start, string start, string end) {
+	vector<string> total_path = {}; 
+	string output = "Your total path is: ";
+	int total_distance = distance_from_start[end].second;
+	total_path.push_back(end);
+	string current_city = end;
+
+	while (total_path.back() != start) {
+		current_city = distance_from_start[current_city].first;
+		total_path.push_back(current_city);
+	}
+
+	for (int i = total_path.size() - 1; i >= 1; --i) {
+		output += total_path.at(i) + "->";
+	}
+	output += total_path.at(0) + "\n";
+	output += "The total distance of this trip is: " + to_string(total_distance) + "\n";
+	return output;
+}
+
+string dijkstra(string start, string end, map<string, list<pair<string, int>>> distances) {
 	vector<string> chosen = {};
 	map<string, pair<string, int>> distance_from_start;
 
 	//this iterates through the cities and sets their total distances from the starting point to infinity (represented by -1)
-	distance_from_start["STL"] = make_pair(NULL, INT_MAX);
-	distance_from_start["NY"] = make_pair(NULL, INT_MAX);
-	distance_from_start["MA"] = make_pair(NULL, INT_MAX);
-	distance_from_start["CR"] = make_pair(NULL, INT_MAX);
-	distance_from_start["KC"] = make_pair(NULL, INT_MAX);
-	distance_from_start["LA"] = make_pair(NULL, INT_MAX);
-	distance_from_start["MN"] = make_pair(NULL, INT_MAX);
+	distance_from_start["STL"] = make_pair("", INT_MAX);
+	distance_from_start["NY"] = make_pair("", INT_MAX);
+	distance_from_start["MA"] = make_pair("", INT_MAX);
+	distance_from_start["CR"] = make_pair("", INT_MAX);
+	distance_from_start["KC"] = make_pair("", INT_MAX);
+	distance_from_start["LA"] = make_pair("", INT_MAX);
+	distance_from_start["MN"] = make_pair("", INT_MAX);
 
 	//this sets the starting city to itself with a distance of 0
 	distance_from_start[start] = make_pair(start, 0);
 	chosen.push_back(start);
+	string current_city = start;
 
 	//this iterates through the city distances and selects the one closest to the starting point, adds it to the visited list, and updates the distance_from_start for each city
 
 	//while the vector size is less than 6
 	for (int i = 0; i < 6; ++i) {
 		//the end of chosen
-		string current_city = chosen[chosen.size() - 1];
-		int current_city_distance = distance_from_start[current_city]->second;
+		current_city = chosen[chosen.size() - 1];
+		int current_city_distance = distance_from_start[current_city].second;
 
 		//the list related to the current city
-		list<pair<string, int>> current_list = distances[chosen];
+		list<pair<string, int>> current_list = distances[current_city];
 
 		//iterator for this list
 		list<pair<string, int>>::iterator it = current_list.begin();
 
+		//beginning of undo
+
 		//iterate through the potential destination cities and update/add distances
 		for (it; it != current_list.end(); ++it) {
 			string next_city = it->first;
-			string next_city_distance = it->second;
+			int next_city_distance = it->second;
 
 			//if the spot for the city in distance_from_start is not yet populated
-			if (isempty(distance_from_start[next_city]->first)) {
-				distance_from_start[next_city]->first = current_city;
-				distance_from_start[next_city]->second = next_city_distance;
+			if (empty(distance_from_start[next_city].first)) {
+				distance_from_start[next_city].first = current_city;
+				distance_from_start[next_city].second = next_city_distance + current_city_distance;
 			}
 
 			//if it is populated, determine if the new value could be better
 			else {
-				if (distance_from_start[next_city]->second > (current_city_distance + next_city_distance)) {
-					distance_from_start[next_city]->first = current_city;
-					distance_from_start[next_city]->second = (current_city_distance + next_city_distance);
+				if (distance_from_start[next_city].second > (current_city_distance + next_city_distance)) { 
+					distance_from_start[next_city].first = current_city;
+					distance_from_start[next_city].second = (current_city_distance + next_city_distance);
 				}
 			}
-
+			
 		}
+
+		current_city = pick_smallest(distance_from_start, chosen, end);
+		chosen.push_back(current_city);
 	}
 
-
+	string output = backtrack(distance_from_start, start, end);
+	return output;
 }
 
 int main() {
@@ -106,9 +151,9 @@ int main() {
 	list<pair<string, int>> city_distances[7] = { STL, NY, MA, CR, KC, LA, MN };
 
 	//add each city into map 
-	map<string, pair<string, int>> city_distances_map;
+	map<string, list<pair<string, int>>> city_distances_map;
 	for (int i = 0; i < 7; ++i) {
-		distance_from_start[cities[i]] = city_distances[i];
+		city_distances_map[cities[i]] = city_distances[i];
 	}
 
 	string starting_city, ending_city;
@@ -118,7 +163,9 @@ int main() {
 	cin >> ending_city;
 
 	string shortest_path = dijkstra(starting_city, ending_city, city_distances_map);
-
 	
+	cout << shortest_path; 
+
+	system("PAUSE");
 	return 0;
 }
